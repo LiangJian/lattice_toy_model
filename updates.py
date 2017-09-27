@@ -13,6 +13,7 @@ def start(n_field_):
         fields[i] = fields[i]*2 - 1
     return fields
 
+
 kappa_phi = 0.07325
 kappa_rho = 0.0718
 g = 0.008

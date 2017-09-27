@@ -1,6 +1,6 @@
-##
+#######################################
 # Hoshen–Kopelman algorithm for 4 dim
-##
+#######################################
 
 
 from dim4_pos import *
@@ -17,11 +17,11 @@ def equive(pos_, labels_, label1_, label2_):
 
 
 def bond(field_, value_):
-    labels_ = np.zeros(shape = field_.shape)
+    labels_ = np.zeros(shape=field_.shape)
     largest_label = 0
     for ix_ in sites:
         index_ = index[ix_]
-        if field_[tuple(index_)]  == value_:  # choose 1 or -1
+        if field_[tuple(index_)] == value_:  # choose 1 or -1
             xm = np.zeros(4, dtype='int')
             for iu in range(4):
                 if index_[iu] == 0:  # bound
@@ -145,6 +145,25 @@ def bond(field_, value_):
     return labels_
 
 
+def handle_labels(labels_):
+    """ This function is only for test use
+    """
+    label_list = []
+    cluster_points = {}
+    for it_ in range(nt):
+        for iz_ in range(nz):
+            for iy_ in range(ny):
+                for ix_ in range(nx):
+                    label_ = int(labels_[it_, iz_, iy_, ix_])
+                    if label_ > 0:
+                        if label_ not in label_list:
+                            label_list.append(label_)
+                            cluster_points[label_] = []
+                        else:
+                            cluster_points[label_].append((it_, iz_, iy_, ix_))
+    return label_list, cluster_points
+
+
 def count(labels_):
     """ This function is only for test use
     """
@@ -153,7 +172,7 @@ def count(labels_):
         for iz_ in range(nz):
             for iy_ in range(ny):
                 for ix_ in range(nx):
-                    #print(labels_[it_, iz_, iy_, ix_])
+                    # print(labels_[it_, iz_, iy_, ix_])
                     if labels_[it_, iz_, iy_, ix_] > 0:
                         count_ += 1
     return count_
