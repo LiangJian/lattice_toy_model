@@ -67,9 +67,8 @@ def update(phi_, rho_):
                 phi_[cluster_points[i][j]] = +1
         else:
             for j in range(len(cluster_points[i])):
-                phi_[cluster_points[i][j]] = +1
+                phi_[cluster_points[i][j]] = -1
 
-    # FIXME
     labels = bond_prop(phi_, -1, prob_phi(kappa_eff(rho_), phi_))
     label_list, cluster_points = handle_labels(labels)
     for i in label_list:
@@ -78,12 +77,46 @@ def update(phi_, rho_):
                 phi_[cluster_points[i][j]] = +1
         else:
             for j in range(len(cluster_points[i])):
-                phi_[cluster_points[i][j]] = +1
+                phi_[cluster_points[i][j]] = -1
 
     labels = bond_prop(rho_, +1, prob_rho(rho_, kappa_rho))
     label_list, cluster_points = handle_labels(labels)
-    # TODO
+    for i in label_list:
+        summation = 0
+        for j in range(len(cluster_points[i])):
+            for k in range(4):
+                index0 = list(cluster_points[i][j])
+                indexm = copy.deepcopy(index0)
+                indexm[k] = (indexm[k] - 1) % ns[k]
+                indexp = copy.deepcopy(index0)
+                indexp[k] = (indexp[k] + 1) % ns[k]
+                summation += phi_[tuple(index0)] * (phi_[tuple(indexm)] + phi_[tuple(indexp)])
+        prop_cluster = np.exp(g*summation)
+        prop_cluster = 1. / (1 + prop_cluster)
+        if np.random.random() < prop_cluster:
+            for j in range(len(cluster_points[i])):
+                rho_[cluster_points[i][j]] = +1
+        else:
+            for j in range(len(cluster_points[i])):
+                rho_[cluster_points[i][j]] = -1
 
     labels = bond_prop(rho_, -1, prob_rho(rho_, kappa_rho))
     label_list, cluster_points = handle_labels(labels)
-    # TODO
+    for i in label_list:
+        summation = 0
+        for j in range(len(cluster_points[i])):
+            for k in range(4):
+                index0 = list(cluster_points[i][j])
+                indexm = copy.deepcopy(index0)
+                indexm[k] = (indexm[k] - 1) % ns[k]
+                indexp = copy.deepcopy(index0)
+                indexp[k] = (indexp[k] + 1) % ns[k]
+                summation += phi_[tuple(index0)] * (phi_[tuple(indexm)] + phi_[tuple(indexp)])
+        prop_cluster = np.exp(g*summation)
+        prop_cluster = 1. / (1 + prop_cluster)
+        if np.random.random() < prop_cluster:
+            for j in range(len(cluster_points[i])):
+                rho_[cluster_points[i][j]] = +1
+        else:
+            for j in range(len(cluster_points[i])):
+                rho_[cluster_points[i][j]] = -1
