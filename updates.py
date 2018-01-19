@@ -3,6 +3,7 @@
 # Hoshen–Kopelman algorithm for labeling clusters on a grid
 #############################################################
 
+from Hk_labelling import *
 from dim4_pos import *
 
 
@@ -10,7 +11,7 @@ def start(n_field_):
     fields = []
     for i in range(n_field_):
         fields.append(np.random.randint(0, 2, v).reshape(tuple(ns)))
-        fields[i] = fields[i]*2 - 1
+        fields[i] = fields[i]*2 - 1  # plus 1 or minus 1
     return fields
 
 
@@ -48,15 +49,8 @@ def prob_rho(rho_, kappa_rho_):
     return np.concatenate((tmp0_, tmp1_, tmp2_, tmp3_), 4)
 
 
-def prob_rho_cluster_kernel(phi_, x_, mu_):
-    pass
-
-
-def prob_rho_cluster(phi_, x_, mu_):
-    pass
-
-
 def update(phi_, rho_):
+
     # step 1, using 'prob_phi' to generate phi field clusters
     #         Actually the process of generating clusters should be a modified HK process
     # step 2, after the clusters are formed, set the spin of the clusters with equal probabilities
@@ -64,4 +58,32 @@ def update(phi_, rho_):
     #         the points in each cluster (list of list)
     # step 3, using 'prob_rho' to generate rho field clusters
     # step 4, after the clusters are formed, set the spin of the clusters with 'prob_rho_cluster'
-    pass
+
+    labels = bond_prop(phi_, +1, prob_phi(kappa_eff(rho_), phi_))
+    label_list, cluster_points = handle_labels(labels)
+    for i in label_list:
+        if np.random.random() < 0.5:
+            for j in range(len(cluster_points[i])):
+                phi_[cluster_points[i][j]] = +1
+        else:
+            for j in range(len(cluster_points[i])):
+                phi_[cluster_points[i][j]] = +1
+
+    # FIXME
+    labels = bond_prop(phi_, -1, prob_phi(kappa_eff(rho_), phi_))
+    label_list, cluster_points = handle_labels(labels)
+    for i in label_list:
+        if np.random.random() < 0.5:
+            for j in range(len(cluster_points[i])):
+                phi_[cluster_points[i][j]] = +1
+        else:
+            for j in range(len(cluster_points[i])):
+                phi_[cluster_points[i][j]] = +1
+
+    labels = bond_prop(rho_, +1, prob_rho(rho_, kappa_rho))
+    label_list, cluster_points = handle_labels(labels)
+    # TODO
+
+    labels = bond_prop(rho_, -1, prob_rho(rho_, kappa_rho))
+    label_list, cluster_points = handle_labels(labels)
+    # TODO
