@@ -15,37 +15,37 @@ def start(n_field_):
     return fields
 
 
-kappa_phi = 0.07325
-kappa_rho = 0.0718
-g = 0.008
+kappa_phi = 0.00
+kappa_rho = 0.5
+g = 0.00
 
 
 def kappa_eff(rho_):
-    tmp0_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, -1, 0)).reshape((nt, ny, nz, nx, 1))
-    tmp1_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, -1, 1)).reshape((nt, ny, nz, nx, 1))
-    tmp2_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, -1, 2)).reshape((nt, ny, nz, nx, 1))
-    tmp3_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, -1, 3)).reshape((nt, ny, nz, nx, 1))
+    tmp0_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, +1, 0)).reshape((nt, nz, ny, nx, 1))
+    tmp1_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, +1, 1)).reshape((nt, nz, ny, nx, 1))
+    tmp2_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, +1, 2)).reshape((nt, nz, ny, nx, 1))
+    tmp3_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, +1, 3)).reshape((nt, nz, ny, nx, 1))
     return np.concatenate((tmp0_, tmp1_, tmp2_, tmp3_), 4)
 
 
 def prob_phi(kappa_eff_, phi_):
-    tmp0_ = ((1 - np.exp(-2 * kappa_eff_[:, 0])) *
-             ((phi_ / np.roll(phi_, -1, 0)) + 1) / 2).reshape((nt, ny, nz, nx, 1))
-    tmp1_ = ((1 - np.exp(-2 * kappa_eff_[:, 1])) *
-             ((phi_ / np.roll(phi_, -1, 1)) + 1) / 2).reshape((nt, ny, nz, nx, 1))
-    tmp2_ = ((1 - np.exp(-2 * kappa_eff_[:, 2])) *
-             ((phi_ / np.roll(phi_, -1, 2)) + 1) / 2).reshape((nt, ny, nz, nx, 1))
-    tmp3_ = ((1 - np.exp(-2 * kappa_eff_[:, 3])) *
-             ((phi_ / np.roll(phi_, -1, 3)) + 1) / 2).reshape((nt, ny, nz, nx, 1))
+    tmp0_ = ((1 - np.exp(-2 * kappa_eff_[..., 0])) *
+             ((phi_ / np.roll(phi_, +1, 0)) + 1) / 2).reshape((nt, nz, ny, nx, 1))
+    tmp1_ = ((1 - np.exp(-2 * kappa_eff_[..., 1])) *
+             ((phi_ / np.roll(phi_, +1, 1)) + 1) / 2).reshape((nt, nz, ny, nx, 1))
+    tmp2_ = ((1 - np.exp(-2 * kappa_eff_[..., 2])) *
+             ((phi_ / np.roll(phi_, +1, 2)) + 1) / 2).reshape((nt, nz, ny, nx, 1))
+    tmp3_ = ((1 - np.exp(-2 * kappa_eff_[..., 3])) *
+             ((phi_ / np.roll(phi_, +1, 3)) + 1) / 2).reshape((nt, nz, ny, nx, 1))
     return np.concatenate((tmp0_, tmp1_, tmp2_, tmp3_), 4)
 
 
 def prob_rho(rho_, kappa_rho_):
     p_ = 1 - np.exp(-2 * kappa_rho_)
-    tmp0_ = p_ * ((rho_ / np.roll(rho_, -1, 0) + 1) / 2).reshape(nt, ny, nz, nx, 1)
-    tmp1_ = p_ * ((rho_ / np.roll(rho_, -1, 1) + 1) / 2).reshape(nt, ny, nz, nx, 1)
-    tmp2_ = p_ * ((rho_ / np.roll(rho_, -1, 2) + 1) / 2).reshape(nt, ny, nz, nx, 1)
-    tmp3_ = p_ * ((rho_ / np.roll(rho_, -1, 3) + 1) / 2).reshape(nt, ny, nz, nx, 1)
+    tmp0_ = p_ * ((rho_ / np.roll(rho_, +1, 0) + 1) / 2).reshape(nt, nz, ny, nx, 1)
+    tmp1_ = p_ * ((rho_ / np.roll(rho_, +1, 1) + 1) / 2).reshape(nt, nz, ny, nx, 1)
+    tmp2_ = p_ * ((rho_ / np.roll(rho_, +1, 2) + 1) / 2).reshape(nt, nz, ny, nx, 1)
+    tmp3_ = p_ * ((rho_ / np.roll(rho_, +1, 3) + 1) / 2).reshape(nt, nz, ny, nx, 1)
     return np.concatenate((tmp0_, tmp1_, tmp2_, tmp3_), 4)
 
 

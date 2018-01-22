@@ -1,7 +1,7 @@
 import numpy as np
 
-nt = 8
-nz = 4
+nt = 10
+nz = 10
 ny = 10
 nx = 10
 
