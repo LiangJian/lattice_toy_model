@@ -15,8 +15,8 @@ def start(n_field_):
     return fields
 
 
-kappa_phi = 0.00
-kappa_rho = 0.5
+kappa_phi = 0.07
+kappa_rho = 0.07
 g = 0.00
 
 

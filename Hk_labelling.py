@@ -21,7 +21,7 @@ def bond(field_, value_):
     labels_ = np.zeros(shape=field_.shape)
     largest_label = 0
     for ix_ in sites:
-        index_ = index[ix_]
+        index_ = list(index[ix_])
         if field_[tuple(index_)] == value_:  # choose 1 or -1
             xm = np.zeros(4, dtype='int')
             for iu in range(4):
@@ -284,11 +284,11 @@ def bond_prop(field_, value_, props_):
     labels_ = np.zeros(shape=field_.shape)
     largest_label = 0
     for ix_ in sites:
-        index_ = index[ix_]
+        index_ = list(index[ix_])
         if field_[tuple(index_)] == value_:  # choose 1 or -1
             xm = np.zeros(4, dtype='int')
             for iu in range(4):
-                if index_[iu] == 0:  # bound
+                if index_[iu] == 0:
                     xm[iu] = 0
                 else:
                     index_[iu] -= 1

@@ -20,4 +20,11 @@ for it in range(nt):
             for ix in range(nx):
                 index.append((it, iz, iy, ix))
                 offset[it, iz, iy, ix] = count
-index = np.array(index)
+
+def move_back(index_, mu_):
+    index_p_ = list(index_)
+    index_p_[mu_] -= 1
+    if (index_p_[mu_]) < 0:
+        print('reach boundary!')
+        exit(0)
+    return tuple(index_p_)
