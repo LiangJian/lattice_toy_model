@@ -1,6 +1,7 @@
 #############################################################
 # Swendsen-Wang type percolation cluster algorithms
 # Hoshen–Kopelman algorithm for labeling clusters on a grid
+# https://arxiv.org/pdf/hep-lat/9503028.pdf
 #############################################################
 
 from Hk_labelling import *
