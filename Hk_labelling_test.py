@@ -1,15 +1,18 @@
 import numpy as np
+import time
+import numba
 
 '''
 To test Hoshen–Kopelman algorithm
 '''
 
-nx = 8
-ny = 8
-nz = 8
-nt = 8
+nx = 12
+ny = 12
+nz = 12
+nt = 12
 
 
+@numba.njit
 def union2(label_, y_, label1_, label2_):
     for iy in range(y_ + 1):
         for ix in range(nx):
@@ -17,6 +20,7 @@ def union2(label_, y_, label1_, label2_):
                 label_[iy, ix] = label2_
 
 
+@numba.njit
 def hk2(lattice_, label_):
     largest_label = 0
     for y in range(ny):
@@ -47,6 +51,7 @@ def hk2(lattice_, label_):
                     label_[y, x] = label_[y, x-1]
 
 
+@numba.njit
 def hk2_2(lattice_, label_):
     largest_label = 0
     for y in range(ny):
@@ -81,6 +86,7 @@ def hk2_2(lattice_, label_):
                             label_[y, x] = label_[y-1, x]
 
 
+@numba.njit
 def union3(label_, z_, label1_, label2_):
     for iz in range(z_ + 1):
         for ix in range(nx):
@@ -89,6 +95,7 @@ def union3(label_, z_, label1_, label2_):
                     label_[iz, iy, ix] = label2_
 
 
+@numba.njit
 def hk3(lattice_, label_):
     largest_label = 0
     for z in range(nz):
@@ -137,6 +144,7 @@ def hk3(lattice_, label_):
                         label_[z, y, x] = label_[z-1, y, x]
 
 
+@numba.njit
 def hk3_2(lattice_, label_):
     largest_label = 0
     for z in range(nz):
@@ -185,6 +193,7 @@ def hk3_2(lattice_, label_):
                                 label_[z, y, x] = label_[z-1, y, x]
 
 
+@numba.njit
 def union4(label_, t_, label1_, label2_):
     for it in range(t_ + 1):
         for iz in range(nz):
@@ -194,6 +203,7 @@ def union4(label_, t_, label1_, label2_):
                         label_[it, iz, iy, ix] = label2_
 
 
+@numba.njit
 def hk4(lattice_, label_):
     largest_label = 0
     for t in range(nt):
@@ -287,6 +297,7 @@ def hk4(lattice_, label_):
                             label_[t, z, y, x] = label_[t-1, z, y, x]
 
 
+@numba.njit
 def hk4_2(lattice_, label_):
     largest_label = 0
     for t in range(nt):
@@ -396,7 +407,7 @@ print(np.sum(bak - label))
 print('...')
 
 random = np.random.randint(0, 2, nx*ny*nz*nt).reshape((nt, nz, ny, nx))
-lattice = np.zeros(shape=(nt, nz, ny, nx),dtype='int')
+lattice = np.zeros(shape=(nt, nz, ny, nx), dtype='int')
 lattice[..., 0, 0] = random[..., 0, 0]
 label = lattice * 0
 
@@ -415,7 +426,13 @@ print((label-bak)[..., 0, 0])
 
 lattice = np.random.randint(0, 2, nx*ny*nz*nt).reshape((nt, nz, ny, nx))
 
+st = time.time()
 hk4(lattice, label)
+ed = time.time()
+print('%.2f' % (ed - st))
 bak = label.copy()
+st = time.time()
 hk4_2(lattice, label)
+ed = time.time()
+print('%.2f' % (ed - st))
 print(np.sum(bak - label))
