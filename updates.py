@@ -4,10 +4,13 @@
 # https://arxiv.org/pdf/hep-lat/9503028.pdf
 #############################################################
 
-from Hk_labelling import *
 from dim4_pos import *
+from HK_labelling_prop import hk4_2_prop, handle_labels
+import copy
+import numba
 
 
+@numba.jit
 def start(n_field_):
     fields = []
     for i in range(n_field_):
@@ -16,40 +19,34 @@ def start(n_field_):
     return fields
 
 
-kappa_phi = 0.07
-kappa_rho = 0.07
+kappa_phi = 0.14
+kappa_rho = 0.14
 g = 0.00
 
 
+@numba.jit
 def kappa_eff(rho_):
-    tmp0_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, +1, 0)).reshape((nt, nz, ny, nx, 1))
-    tmp1_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, +1, 1)).reshape((nt, nz, ny, nx, 1))
-    tmp2_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, +1, 2)).reshape((nt, nz, ny, nx, 1))
-    tmp3_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, +1, 3)).reshape((nt, nz, ny, nx, 1))
+    tmp0_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, -1, 0)).reshape((nt, nz, ny, nx, 1))
+    tmp1_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, -1, 1)).reshape((nt, nz, ny, nx, 1))
+    tmp2_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, -1, 2)).reshape((nt, nz, ny, nx, 1))
+    tmp3_ = kappa_phi - 0.5 * g * (rho_ + np.roll(rho_, -1, 3)).reshape((nt, nz, ny, nx, 1))
     return np.concatenate((tmp0_, tmp1_, tmp2_, tmp3_), 4)
 
 
-def prob_phi(kappa_eff_, phi_):
-    tmp0_ = ((1 - np.exp(-2 * kappa_eff_[..., 0])) *
-             ((phi_ / np.roll(phi_, +1, 0)) + 1) / 2).reshape((nt, nz, ny, nx, 1))
-    tmp1_ = ((1 - np.exp(-2 * kappa_eff_[..., 1])) *
-             ((phi_ / np.roll(phi_, +1, 1)) + 1) / 2).reshape((nt, nz, ny, nx, 1))
-    tmp2_ = ((1 - np.exp(-2 * kappa_eff_[..., 2])) *
-             ((phi_ / np.roll(phi_, +1, 2)) + 1) / 2).reshape((nt, nz, ny, nx, 1))
-    tmp3_ = ((1 - np.exp(-2 * kappa_eff_[..., 3])) *
-             ((phi_ / np.roll(phi_, +1, 3)) + 1) / 2).reshape((nt, nz, ny, nx, 1))
-    return np.concatenate((tmp0_, tmp1_, tmp2_, tmp3_), 4)
+@numba.jit
+def prob_phi(kappa_eff_):
+    dice = np.random.random((nt, nz, ny, nx, 4))
+    return dice < 1 - np.exp(-2 * kappa_eff_)
+
+# dice = np.random.random((nt, nz, ny, nx, 4))
+
+@numba.jit
+def prob_rho(kappa_rho_):
+    dice = np.random.random((nt, nz, ny, nx, 4))
+    return dice < 1 - np.exp(-2 * kappa_rho_)
 
 
-def prob_rho(rho_, kappa_rho_):
-    p_ = 1 - np.exp(-2 * kappa_rho_)
-    tmp0_ = p_ * ((rho_ / np.roll(rho_, +1, 0) + 1) / 2).reshape(nt, nz, ny, nx, 1)
-    tmp1_ = p_ * ((rho_ / np.roll(rho_, +1, 1) + 1) / 2).reshape(nt, nz, ny, nx, 1)
-    tmp2_ = p_ * ((rho_ / np.roll(rho_, +1, 2) + 1) / 2).reshape(nt, nz, ny, nx, 1)
-    tmp3_ = p_ * ((rho_ / np.roll(rho_, +1, 3) + 1) / 2).reshape(nt, nz, ny, nx, 1)
-    return np.concatenate((tmp0_, tmp1_, tmp2_, tmp3_), 4)
-
-
+@numba.jit
 def update(phi_, rho_):
 
     # step 1, using 'prob_phi' to generate phi field clusters
@@ -60,28 +57,26 @@ def update(phi_, rho_):
     # step 3, using 'prob_rho' to generate rho field clusters
     # step 4, after the clusters are formed, set the spin of the clusters with 'prob_rho_cluster'
 
-    labels = bond_prop(phi_, +1, prob_phi(kappa_eff(rho_), phi_))
-    label_list, cluster_points = handle_labels(labels)
+    labels_ = phi_.copy() * 0.0
+    hk4_2_prop(phi_, labels_, +1, prob_phi(kappa_eff(rho_)))
+
+    label_list, cluster_points = handle_labels(labels_)
+    for i in label_list:
+        if np.random.random() < 0.5:
+            for j in range(len(cluster_points[i])):
+                phi_[cluster_points[i][j]] = -1
+
+    labels_ *= 0.0
+    hk4_2_prop(phi_, labels_, -1, prob_phi(kappa_eff(rho_)))
+    label_list, cluster_points = handle_labels(labels_)
     for i in label_list:
         if np.random.random() < 0.5:
             for j in range(len(cluster_points[i])):
                 phi_[cluster_points[i][j]] = +1
-        else:
-            for j in range(len(cluster_points[i])):
-                phi_[cluster_points[i][j]] = -1
 
-    labels = bond_prop(phi_, -1, prob_phi(kappa_eff(rho_), phi_))
-    label_list, cluster_points = handle_labels(labels)
-    for i in label_list:
-        if np.random.random() < 0.5:
-            for j in range(len(cluster_points[i])):
-                phi_[cluster_points[i][j]] = +1
-        else:
-            for j in range(len(cluster_points[i])):
-                phi_[cluster_points[i][j]] = -1
-
-    labels = bond_prop(rho_, +1, prob_rho(rho_, kappa_rho))
-    label_list, cluster_points = handle_labels(labels)
+    labels_ *= 0.0
+    hk4_2_prop(rho_, labels_, +1, prob_rho(kappa_rho))
+    label_list, cluster_points = handle_labels(labels_)
     for i in label_list:
         summation = 0
         for j in range(len(cluster_points[i])):
@@ -92,17 +87,15 @@ def update(phi_, rho_):
                 indexp = copy.deepcopy(index0)
                 indexp[k] = (indexp[k] + 1) % ns[k]
                 summation += phi_[tuple(index0)] * (phi_[tuple(indexm)] + phi_[tuple(indexp)])
-        prop_cluster = np.exp(g*summation)
+        prop_cluster = np.exp(g * summation)
         prop_cluster = 1. / (1 + prop_cluster)
-        if np.random.random() < prop_cluster:
-            for j in range(len(cluster_points[i])):
-                rho_[cluster_points[i][j]] = +1
-        else:
+        if np.random.random() >= prop_cluster:
             for j in range(len(cluster_points[i])):
                 rho_[cluster_points[i][j]] = -1
 
-    labels = bond_prop(rho_, -1, prob_rho(rho_, kappa_rho))
-    label_list, cluster_points = handle_labels(labels)
+    labels_ *= 0.0
+    hk4_2_prop(rho_, labels_, -1, prob_rho(kappa_rho))
+    label_list, cluster_points = handle_labels(labels_)
     for i in label_list:
         summation = 0
         for j in range(len(cluster_points[i])):
@@ -113,11 +106,9 @@ def update(phi_, rho_):
                 indexp = copy.deepcopy(index0)
                 indexp[k] = (indexp[k] + 1) % ns[k]
                 summation += phi_[tuple(index0)] * (phi_[tuple(indexm)] + phi_[tuple(indexp)])
-        prop_cluster = np.exp(g*summation)
+        prop_cluster = np.exp(g * summation)
         prop_cluster = 1. / (1 + prop_cluster)
         if np.random.random() < prop_cluster:
             for j in range(len(cluster_points[i])):
                 rho_[cluster_points[i][j]] = +1
-        else:
-            for j in range(len(cluster_points[i])):
-                rho_[cluster_points[i][j]] = -1
+

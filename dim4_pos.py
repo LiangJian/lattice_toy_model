@@ -2,9 +2,9 @@ import numpy as np
 
 #  lattice size as global params
 nt = 16
-nz = 4
-ny = 4
-nx = 4
+nz = 8
+ny = 8
+nx = 8
 
 #  t z y x
 ns = np.array((nt, nz, ny, nx))

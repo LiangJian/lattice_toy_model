@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import numba
+from dim4_pos import *
 
 '''
 To test Hoshen–Kopelman algorithm
@@ -12,7 +13,7 @@ nz = 12
 nt = 12
 
 
-@numba.njit
+@numba.jit
 def union2(label_, y_, label1_, label2_):
     for iy in range(y_ + 1):
         for ix in range(nx):
@@ -20,7 +21,7 @@ def union2(label_, y_, label1_, label2_):
                 label_[iy, ix] = label2_
 
 
-@numba.njit
+@numba.jit
 def hk2(lattice_, label_):
     largest_label = 0
     for y in range(ny):
@@ -51,7 +52,7 @@ def hk2(lattice_, label_):
                     label_[y, x] = label_[y, x-1]
 
 
-@numba.njit
+@numba.jit
 def hk2_2(lattice_, label_):
     largest_label = 0
     for y in range(ny):
@@ -86,7 +87,7 @@ def hk2_2(lattice_, label_):
                             label_[y, x] = label_[y-1, x]
 
 
-@numba.njit
+@numba.jit
 def union3(label_, z_, label1_, label2_):
     for iz in range(z_ + 1):
         for ix in range(nx):
@@ -95,7 +96,7 @@ def union3(label_, z_, label1_, label2_):
                     label_[iz, iy, ix] = label2_
 
 
-@numba.njit
+@numba.jit
 def hk3(lattice_, label_):
     largest_label = 0
     for z in range(nz):
@@ -144,7 +145,7 @@ def hk3(lattice_, label_):
                         label_[z, y, x] = label_[z-1, y, x]
 
 
-@numba.njit
+@numba.jit
 def hk3_2(lattice_, label_):
     largest_label = 0
     for z in range(nz):
@@ -193,7 +194,7 @@ def hk3_2(lattice_, label_):
                                 label_[z, y, x] = label_[z-1, y, x]
 
 
-@numba.njit
+@numba.jit
 def union4(label_, t_, label1_, label2_):
     for it in range(t_ + 1):
         for iz in range(nz):
@@ -203,7 +204,7 @@ def union4(label_, t_, label1_, label2_):
                         label_[it, iz, iy, ix] = label2_
 
 
-@numba.njit
+@numba.jit
 def hk4(lattice_, label_):
     largest_label = 0
     for t in range(nt):
@@ -297,7 +298,7 @@ def hk4(lattice_, label_):
                             label_[t, z, y, x] = label_[t-1, z, y, x]
 
 
-@numba.njit
+@numba.jit
 def hk4_2(lattice_, label_):
     largest_label = 0
     for t in range(nt):
@@ -363,6 +364,72 @@ def hk4_2(lattice_, label_):
                                     union4(label_, t, label_[t-1, z, y, x], label_[t, z-1, y, x])
                                     label_[t, z, y, x] = label_[t-1, z, y, x]
 
+
+@numba.jit
+def hk4_2_prop(lattice_, label_, value_, props_):
+    largest_label = 0
+    for t in range(nt):
+        for z in range(nz):
+            for y in range(ny):
+                for x in range(nx):
+                    if lattice_[t, z, y, x] == value_:
+                        # Can I use other BD condition?
+                        xm = False
+                        if x > 0:
+                            xm = lattice_[t, z, y, x - 1] == value_ and props_[t, z, y, x-1, 3]
+                        ym = False
+                        if y > 0:
+                            ym = lattice_[t, z, y - 1, x] == value_ and props_[t, z, y-1, x, 2]
+                        zm = False
+                        if z > 0:
+                            zm = lattice_[t, z - 1, y, x] == value_ and props_[t, z-1, y, x, 1]
+                        tm = False
+                        if t > 0:
+                            tm = lattice_[t - 1, z, y, x] == value_ and props_[t-1, z, y, x, 0]
+
+                        last_connect = ''
+
+                        if not xm and not ym and not zm and not tm:
+                            largest_label = largest_label + 1
+                            label_[t, z, y, x] = largest_label
+
+                        else:
+
+                            if xm:  # handle xm first
+                                label_[t, z, y, x] = label_[t, z, y, x-1]
+                                last_connect = 'xm'
+
+                            if ym:
+                                if last_connect == '':
+                                    label_[t, z, y, x] = label_[t, z, y-1, x]
+                                elif last_connect == 'xm':
+                                    union4(label_, t, label_[t, z, y-1, x], label_[t, z, y, x-1])
+                                    label_[t, z, y, x] = label_[t, z, y-1, x]
+                                last_connect = 'ym'
+
+                            if zm:
+                                if last_connect == '':
+                                    label_[t, z, y, x] = label_[t, z-1, y, x]
+                                elif last_connect == 'xm':
+                                    union4(label_, t, label_[t, z-1, y, x], label_[t, z, y, x-1])
+                                    label_[t, z, y, x] = label_[t, z-1, y, x]
+                                elif last_connect == 'ym':
+                                    union4(label_, t, label_[t, z-1, y, x], label_[t, z, y-1, x])
+                                    label_[t, z, y, x] = label_[t, z-1, y, x]
+                                last_connect = 'zm'
+
+                            if tm:
+                                if last_connect == '':
+                                    label_[t, z, y, x] = label_[t-1, z, y, x]
+                                elif last_connect == 'xm':
+                                    union4(label_, t, label_[t-1, z, y, x], label_[t, z, y, x-1])
+                                    label_[t, z, y, x] = label_[t-1, z, y, x]
+                                elif last_connect == 'ym':
+                                    union4(label_, t, label_[t-1, z, y, x], label_[t, z, y-1, x])
+                                    label_[t, z, y, x] = label_[t-1, z, y, x]
+                                elif last_connect == 'zm':
+                                    union4(label_, t, label_[t-1, z, y, x], label_[t, z-1, y, x])
+                                    label_[t, z, y, x] = label_[t-1, z, y, x]
 
 lattice = np.random.randint(0, 2, nx*ny).reshape(ny, nx)
 label = np.random.randint(0, 1, nx*ny).reshape(ny, nx)
@@ -431,6 +498,14 @@ hk4(lattice, label)
 ed = time.time()
 print('%.2f' % (ed - st))
 bak = label.copy()
+
+st = time.time()
+props = np.zeros(shape=(nt, ny, nz, nx, 4)) == 0
+hk4_2_prop(lattice, label, 1, props)
+ed = time.time()
+print('%.2f' % (ed - st))
+print(np.sum(bak - label))
+
 st = time.time()
 hk4_2(lattice, label)
 ed = time.time()
