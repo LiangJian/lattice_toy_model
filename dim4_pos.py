@@ -1,7 +1,7 @@
 import numpy as np
 
 #  lattice size as global params
-nt = 16
+nt = 8
 nz = 8
 ny = 8
 nx = 8

@@ -19,8 +19,8 @@ def start(n_field_):
     return fields
 
 
-kappa_phi = 0.14
-kappa_rho = 0.14
+kappa_phi = 0.04
+kappa_rho = 0.04
 g = 0.00
 
 
@@ -57,26 +57,31 @@ def update(phi_, rho_):
     # step 3, using 'prob_rho' to generate rho field clusters
     # step 4, after the clusters are formed, set the spin of the clusters with 'prob_rho_cluster'
 
-    labels_ = phi_.copy() * 0.0
-    hk4_2_prop(phi_, labels_, +1, prob_phi(kappa_eff(rho_)))
+    labels_1_ = phi_.copy() * 0.0
+    labels_2_ = phi_.copy() * 0.0
+    hk4_2_prop(phi_, labels_1_, +1, prob_phi(kappa_eff(rho_)))
+    hk4_2_prop(phi_, labels_2_, -1, prob_phi(kappa_eff(rho_)))
 
-    label_list, cluster_points = handle_labels(labels_)
+    label_list, cluster_points = handle_labels(labels_1_)
     for i in label_list:
+        #print('len', len(cluster_points[i]))
         if np.random.random() < 0.5:
             for j in range(len(cluster_points[i])):
                 phi_[cluster_points[i][j]] = -1
 
-    labels_ *= 0.0
-    hk4_2_prop(phi_, labels_, -1, prob_phi(kappa_eff(rho_)))
-    label_list, cluster_points = handle_labels(labels_)
+    label_list, cluster_points = handle_labels(labels_2_)
     for i in label_list:
         if np.random.random() < 0.5:
             for j in range(len(cluster_points[i])):
                 phi_[cluster_points[i][j]] = +1
 
-    labels_ *= 0.0
-    hk4_2_prop(rho_, labels_, +1, prob_rho(kappa_rho))
-    label_list, cluster_points = handle_labels(labels_)
+
+    labels_1_ *= 0.0
+    labels_2_ *= 0.0
+    hk4_2_prop(rho_, labels_1_, +1, prob_rho(kappa_rho))
+    hk4_2_prop(rho_, labels_2_, -1, prob_rho(kappa_rho))
+
+    label_list, cluster_points = handle_labels(labels_1_)
     for i in label_list:
         summation = 0
         for j in range(len(cluster_points[i])):
@@ -93,9 +98,7 @@ def update(phi_, rho_):
             for j in range(len(cluster_points[i])):
                 rho_[cluster_points[i][j]] = -1
 
-    labels_ *= 0.0
-    hk4_2_prop(rho_, labels_, -1, prob_rho(kappa_rho))
-    label_list, cluster_points = handle_labels(labels_)
+    label_list, cluster_points = handle_labels(labels_2_)
     for i in label_list:
         summation = 0
         for j in range(len(cluster_points[i])):
